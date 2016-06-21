@@ -5,21 +5,51 @@ output:
     keep_md: true
 ---
 
+##   I. Loading and preprocessing the data
 
-## Loading and preprocessing the data
+The first step retrieves a data sample (if necessary) and loads it using read.csv for processing and analysis.
+
+The 52K data sample for this analysis is downloaded from the web site: [Activity monitoring data](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip)
+
+```{r}{loadSample}
+
+      dataUrl <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+      dataZip <- "./activity.zip"
+      dataCsv <- "./activity.csv"
+
+     if (!file.exists(dataCsv)){
+
+           if(!file.exists(dataZip)){
+               download.file(dataUrl, dataZip)
+           }
+           unzip(dataZip)
+      }
+
+      sample <- read.csv(dataCsv)
+```
+
+Variables included in the source dataset are:
+
+1. **steps:** Number of steps taking in a 5-minute interval (missing values are coded as NA)
+2. **date:** The date on which the measurement was taken in YYYY-MM-DD format
+3. **interval:** Identifier for the 5-minute interval in which measurement was taken
+
+There should be a total of **17,568** observations in this dataset.
+
+```{r}{examineSample}
+      str(sample)
+```
+
+##  II. What is mean total number of steps taken per day?
 
 
 
-## What is mean total number of steps taken per day?
+## III. What is the average daily activity pattern?
 
 
 
-## What is the average daily activity pattern?
+##  IV. Imputing missing values
 
 
 
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
+##   V. Are there differences in activity patterns between weekdays and weekends?
