@@ -7,7 +7,9 @@ output:
 
 ##   I. Loading and preprocessing the data
 
-The first step retrieves a data sample (if necessary) and loads it using read.csv for processing and analysis.  The 52K data sample for this analysis is downloaded from the web site: [Activity monitoring data](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip)
+1. Retrive the activity monitoring data sample from [Activity monitoring data](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip)
+,then load it into a dataframe called **dataRaw** using **read.csv**. 
+
 
 ```{r}{loadSample}
 
@@ -23,60 +25,62 @@ The first step retrieves a data sample (if necessary) and loads it using read.cs
            unzip(dataZip)
       }
 
-      sample <- read.csv(dataCsv)
+      dataRaw <- read.csv(dataCsv)
+      inpRows <- nrow(dataRaw)
+      naRows  <- nrow(dataRaw[is.na(dataRaw$steps),])
+      str(dataRaw)
+      
 ```
 
-Variables included in the source dataset are:
+2. Here is information/metadata about our activity dataset variables.
 
-1. **steps:**     Number of steps taking in a 5-minute interval (missing values are coded as NA)
-2. **date:**      The date on which the measurement was taken in *YYYY-MM-DD* format
-3. **interval:**  Identifier for the 5-minute interval in which measurement was taken
+- **steps:**     Number of steps taking in a 5-minute interval (there are **`r naRows`** missing values are coded as **NA**)
+- **date:**      The date on which the measurement was taken in *YYYY-MM-DD* format
+- **interval:**  Identifier for each 5-minute interval in which a measurement was taken
+- There are a total of **`r inpRows`** observations in this dataset.
 
-There should be a total of **17,568** observations in this dataset.
-
-```{r}{examineSample}
-      str(sample)
-```
-
-This next step processes the data for the analysis below by converting **date** from *factor* to *date*
+3. In order to evalutate dates properly, we next cast **date** from *Factor* to *Date* storing our
+modified dataframe in **sample1**. 
 
 ```{r}{processSample}
-      sample$date <- as.Date(sample$date)
-      str(sample)
-```
 
+      sample1 <- dataRaw
+      sample1$date <- as.Date(sample1$date)
+      str(sample1)
+```
+- **sample1** will be used to answer the next two questions.
 
 ##  II. What is mean total number of steps taken per day?
 
-To answer this question, we need to aggregate (*sum*) the total number of steps taken each day. We will also calculate the **mean** and **median** number of the total number of steps taken per day
+Loading the dplyr library for processing the data frames
 
-
-```{r}{calcTotalSteps}
-
+```{r} 
    library(dplyr)
-   TotStepsXDay  <- sample                %>%
-                    group_by(date)        %>%
-                    filter(!is.na(steps)) %>%
-                    summarise(steps = sum(steps, na.rm=TRUE))
-   
-   meanSteps    <- as.character(round(mean(TotStepsXDay$steps,na.rm=T ),1))
-   medianSteps  <- as.character(round(median(TotStepsXDay$steps,na.rm=T ),1))
-   
-   head(TotStepsXDay)
-   summary(TotStepsXDay$steps)
-   
-     
 ```
 
+1. To answer this question, we need to aggregate the *sum* (total) number of steps taken each **date** from the **sample1** dataframe. We also capture the **mean** and **median** number of steps taken per day. Our aggregated result set will be stored in **totStepsXDay**
 
-Below are the total steps per day presented in a histogram to see the distribution of steps over days, and visualize 
-the mean.
+```{r}{calc_totStepsXDay}
 
+   totStepsXDay  <- sample1                %>%
+                    group_by(date)         %>%
+                    filter(!is.na(steps))  %>%
+                    summarise(steps = sum(steps, na.rm=TRUE))
+   
+   meanSteps1    <- as.character(round(mean(totStepsXDay$steps,na.rm=T ),1))
+   medianSteps1  <- as.character(round(median(totStepsXDay$steps,na.rm=T ),1))
+   
+   head(totStepsXDay)
+   summary(totStepsXDay$steps)
+   
+```
+
+2. To view distribution and visualize the mean total number of steps taken per day, we are presenting **totStepsXDay** in a histogram
 
 ```{r}{plotTotSteps}
 
-   plot( TotStepsXDay$date, 
-         TotStepsXDay$steps, 
+   plot( totStepsXDay$date, 
+         totStepsXDay$steps, 
          type="h", 
          main="Histogram of Steps per Day", 
          xlab="Date", 
@@ -84,134 +88,167 @@ the mean.
          #col="blue", 
          lwd=8)
 
-  abline(h=mean(TotStepsXDay$steps, na.rm=TRUE), col="red", lwd=1)
+  abline(h=mean(totStepsXDay$steps, na.rm=TRUE), col="red", lwd=1)
 
 ```
 
-- The **mean** number of steps taken per day is **`r meanSteps`** 
-- The **median** number of steps taken per day is **`r medianSteps`**
-
+- The **mean** number of steps taken per day is **`r meanSteps1`** 
+- The **median** number of steps taken per day is **`r medianSteps1`**
 
 ## III. What is the average daily activity pattern?
 
-To answer this question, we need to aggregate the (*mean or average*) number of steps taken each **interval**. We will also calculate which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps
+1. To answer this question, we need to aggregate the *mean* (average) number of steps taken each **interval** from the **sample1** dataframe. The aggregated data frame is stored in **avgStepsXInt** for additional examination.  We also capture Which 5-minute interval, on average, across all days in the **sample1**, contains the maximum number of steps.
 
 ```{r}{calcTotaleps}
 
-   AvgStepsXInt <- sample                    %>%
+   avgStepsXInt <- sample1                   %>%
                    group_by(interval)        %>%
                    filter(!is.na(steps))     %>%
                    summarise(steps = mean(steps, na.rm=TRUE))
    
-   MaxSteps    <- AvgStepsXInt$interval[which(AvgStepsXInt$steps == max(AvgStepsXInt$steps))]
-   
-   head(AvgStepsXInt)
-   summary(AvgStepsXInt$steps)
+   maxStepInt   <- avgStepsXInt$interval[which(avgStepsXInt$steps == max(avgStepsXInt$steps))]
+   head(avgStepsXInt)
+   summary(avgStepsXInt$steps)
      
 ```
 
-The graph below plots the average steps taken per time interval across days.  
+2. The graph below is a time series plot of the 5-minute intervals (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
 
 ```{r}{plotAvgSteps}
 
-   plot( AvgStepsXInt$interval, 
-         AvgStepsXInt$steps, 
+   plot( avgStepsXInt$interval, 
+         avgStepsXInt$steps, 
          type="l", 
-         main="Average Daily Steps", 
-         xlab="Interval", 
-         ylab="Steps", 
+         main="Average Daily Steps Taken", 
+         xlab="5-Minute Interval", 
+         ylab="Avg Steps Taken", 
          col="blue", 
          lwd=1)
 
-  abline(v=MaxSteps, col="red", lwd=0.5)
+  abline(v=maxStepInt, col="red", lwd=0.5)
   
 ```
 
-- The 5-minute interval,that contains the maximum number of steps is **`r MaxSteps`**
+- The 5-minute interval,that contains the maximum number of steps is **`r maxStepInt`**
 
 ##  IV. Imputing missing values
 
-```{r}{calMV}
-   missingVal <- nrow(sample[is.na(sample$steps),])
-```
-
-We noticed there are a number of days/intervals (**`r missingVal`**) that are missing values for steps (coded as **NA**). The presence of missing data may introduce bias into some calculations or summaries of the data.  Impute missing values using mean for each day.
+1. We observed in **I. Loading and preprocessing the data** there are **`r naRows`** observations missing values for **steps** (coded as NA) in the **dataRaw** and **sample1**. The presence of missing data may introduce bias into our aggragations *(summaries/averages)*. To evaluate the impact of the **`r naRows`**  missing values, we substitute each missing value for number of steps taken for each day, with a calculated mean number of steps for each day. our modified dataframe inputing missing values will be dataframe **sample2**.
 
 ```{r}{ImputeMissingValues}
 
-   imputedSample <- sample
-   missingValues <- is.na(imputedSample$steps)
-   avg_interval  <- tapply( imputedSample$steps, 
-                            imputedSample$interval, 
+   sample2       <- sample1
+   mvalues       <- is.na(sample2$steps)
+   avg_interval  <- tapply( sample2$steps, 
+                            sample2$interval, 
                             mean, 
                             na.rm=TRUE, 
                             simplify = TRUE )
    
-   imputedSample$steps[missingValues] <- avg_interval[as.character(imputedSample$interval[missingValues])]
+   sample2$steps[mvalues] <- avg_interval[as.character(sample2$interval[mvalues])]
    
-   missingVal <- nrow(imputedSample[is.na(imputedSample$steps),])
+   mvalues <- nrow(sample2[is.na(sample2$steps),])
    
-   head(imputedSample)
-   str(imputedSample)
+   head(sample2)
+   str(sample2)
 
 ```
+2. Using the same method (as in step **II. What is mean total number of steps taken per day** above) we will now aggregate the *sum* (total) number of steps taken each **date** from the **sample2** dataframe containing our imputed missing steps. We also capture the **mean** and **median** number of steps taken per day. Our aggregated result set will be stored in **totStepsXDay2**
 
-In our new dataset there are now (**`r missingVal`**) days/intervals missing values for steps (coded as **NA**). 
+```{r}{calc_totStepsXDay2}
 
-Below are the total steps per day presented in a histogram to see the distribution of steps over days, and visualize 
-the mean.
-
-```{r}{calcTotalImpSteps}
-
-   TotStepsXIDay  <- imputedSample         %>%
-                     group_by(date)        %>%
-                     summarise(steps = sum(steps, na.rm=TRUE))
+   totStepsXDay2  <- sample2               %>%
+                    group_by(date)         %>%
+                    filter(!is.na(steps))  %>%
+                    summarise(steps = sum(steps, na.rm=TRUE))
    
-   meanImpSteps    <- as.character(round(mean(TotStepsXIDay$steps,na.rm=T ),1))
-   medianImpSteps  <- as.character(round(median(TotStepsXIDay$steps,na.rm=T ),1))
+   meanSteps2    <- as.character(round(mean(totStepsXDay2$steps,na.rm=T ),1))
+   medianSteps2  <- as.character(round(median(totStepsXDay2$steps,na.rm=T ),1))
    
-   head(TotStepsXDay)
-   summary(TotStepsXDay$steps)
+   head(totStepsXDay2)
+   summary(totStepsXDay2$steps)
    
-     
 ```
+3. To view distribution and visualize the mean total number of steps taken per day, we are presenting **totStepsXDay2** in a histogram
 
-```{r}{plotImpSteps}
+```{r}{plotTotSteps2}
 
-   plot( TotStepsXDay$date, 
-         TotStepsXDay$steps, 
+   plot( totStepsXDay2$date, 
+         totStepsXDay2$steps, 
          type="h", 
          main="Histogram of Steps per Day", 
          xlab="Date", 
          ylab="Steps", 
-         #col="blue", 
+         col="blue", 
          lwd=8)
 
-  abline(h=mean(TotStepsXDay$steps, na.rm=TRUE), col="red", lwd=1)
+  abline(h=mean(totStepsXDay$steps, na.rm=TRUE), col="red", lwd=1)
 
 ```
 
-- The **mean** number of steps taken per day is **`r meanImpSteps`** 
-- The **median** number of steps taken per day is **`r medianImpSteps`**
+- The **mean** number of steps taken per day is now **`r meanSteps2`** 
+- The **median** number of steps taken per day is now **`r medianSteps2`**
 
-What is the impact of imputing missing data on the estimates of the total daily number of steps?
-
-```{r}{calcImpact}
-
- diffMean    <- as.character(round(mean(TotStepsXIDay$steps,na.rm=T ),1) 
-                           - round(mean(TotStepsXDay$steps,na.rm=T ),1))
-
- diffMedian  <- as.character(round(median(TotStepsXIDay$steps,na.rm=T ),1) 
-                           - round(median(TotStepsXDay$steps,na.rm=T ),1))
-
-```
-
-- The difference in **mean** number of steps between the modified and raw sample is **`r diffMean`**
-- The difference in **median** number of steps between the modified and raw sample is **`r diffMedian`**
-
-The impact of imputing missing data with the average number of steps in the same 5-min interval is that 
-both the mean and the median are same value : **`r meanImpSteps`** 
-
-
+*The impact of imputing missing data with the average number of steps in the same 5-min interval is that* 
+*both the* **mean** *and the* **median** *are same value :* **`r meanSteps2`** *
 
 ##   V. Are there differences in activity patterns between weekdays and weekends?
+
+1. First we will add a variable called **type** to **sample2** by deriving the whether a particular date falls on a **weekday**, or **weekend**.
+
+```{r}{calcWeektype}
+
+   sample2  <- sample2  %>%
+               mutate(type = ifelse(weekdays(sample2$date)=="Monday"    | 
+                                    weekdays(sample2$date)=="Tuesday"   |
+                                    weekdays(sample2$date)=="Wednesday" |
+                                    weekdays(sample2$date)=="Thursday"  |
+                                    weekdays(sample2$date)=="Friday",
+                                    "Weekday", 
+                                    "Weekend"))
+
+   head(sample2)
+   str(sample2)
+   
+```
+
+
+2. To answer this question, we will aggregate the *mean* (average) number of steps taken by each **interval** and **type** from the **sample2** dataframe. The aggregated data frame is stored in **avgStepsXInt** for additional examination.
+
+
+```{r}{aggXIntXtype}
+
+   avgStepsXIntXType <- sample2                   %>%
+                        group_by(interval, type)  %>%
+                        summarise(steps = mean(steps, na.rm=TRUE))
+ 
+
+   head(avgStepsXIntXType)
+   str(avgStepsXIntXType)
+   
+```
+
+3. Finally we make a panel plot containing a time series plot **(i.e. type = "l")** of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). 
+
+```{r}{plotavgStepsXIntXType}
+    
+    library(ggplot2)
+
+    p <- ggplot( avgStepsXIntXType, 
+                 aes( x     = interval, 
+                      y     = steps))                                +                    
+                 geom_line()                                         +
+                 labs( title = "Avg. Daily Steps by Day of Week Type", 
+                       x     = " 5 - Minute Interval", 
+                       y     = "Avg No. of Steps Taken")             +
+                  facet_wrap( ~type, 
+                              ncol = 1, 
+                              nrow = 2)
+    print(p)
+    
+```
+
+*The panel plot above illustrates there * **are** *differences in activity patterns between weekdays and weekends*
+
+  
