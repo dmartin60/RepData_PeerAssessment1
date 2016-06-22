@@ -7,9 +7,7 @@ output:
 
 ##   I. Loading and preprocessing the data
 
-The first step retrieves a data sample (if necessary) and loads it using read.csv for processing and analysis.
-
-The 52K data sample for this analysis is downloaded from the web site: [Activity monitoring data](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip)
+The first step retrieves a data sample (if necessary) and loads it using read.csv for processing and analysis.  The 52K data sample for this analysis is downloaded from the web site: [Activity monitoring data](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip)
 
 ```{r}{loadSample}
 
@@ -30,9 +28,9 @@ The 52K data sample for this analysis is downloaded from the web site: [Activity
 
 Variables included in the source dataset are:
 
-1. **steps:** Number of steps taking in a 5-minute interval (missing values are coded as NA)
-2. **date:** The date on which the measurement was taken in YYYY-MM-DD format
-3. **interval:** Identifier for the 5-minute interval in which measurement was taken
+1. **steps:**     Number of steps taking in a 5-minute interval (missing values are coded as NA)
+2. **date:**      The date on which the measurement was taken in *YYYY-MM-DD* format
+3. **interval:**  Identifier for the 5-minute interval in which measurement was taken
 
 There should be a total of **17,568** observations in this dataset.
 
@@ -40,13 +38,97 @@ There should be a total of **17,568** observations in this dataset.
       str(sample)
 ```
 
+This next step processes the data for the analysis below by converting **date** from *factor* to *date*
+
+```{r}{processSample}
+      sample$date <- as.Date(sample$date)
+      str(sample)
+```
+
+
 ##  II. What is mean total number of steps taken per day?
 
+To answer this question, we need to aggregate (*sum*) the total number of steps taken each day. We will also calculate the **mean** and **median** number of the total number of steps taken per day
+
+
+
+```{r}{calcTotalSteps}
+
+   library(dplyr)
+   TotStepsXDay  <- sample                %>%
+                    group_by(date)        %>%
+                    filter(!is.na(steps)) %>%
+                    summarise(steps = sum(steps, na.rm=TRUE))
+   
+   meanSteps    <- as.character(round(mean(TotStepsXDay$steps,na.rm=T ),1))
+   medianSteps  <- as.character(round(median(TotStepsXDay$steps,na.rm=T ),1))
+   
+   head(TotStepsXDay)
+   summary(TotStepsXDay$steps)
+   
+     
+```
+
+
+Below are the total steps per day presented in a histogram to see the distribution of steps over days, and visualize 
+the mean.
+
+
+```{r}{plotTotSteps}
+
+   plot( TotStepsXDay$date, 
+         TotStepsXDay$steps, 
+         type="h", 
+         main="Histogram of Steps per Day", 
+         xlab="Date", 
+         ylab="Steps", 
+         #col="blue", 
+         lwd=8)
+
+  abline(h=mean(TotStepsXDay$steps, na.rm=TRUE), col="red", lwd=1)
+
+```
+
+- The **mean** number of steps taken per day is **`r meanSteps`** 
+- The **median** number of steps taken per day is **`r medianSteps`**
 
 
 ## III. What is the average daily activity pattern?
 
+To answer this question, we need to aggregate the (*mean or average*) number of steps taken each **interval**. We will also calculate which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps
 
+```{r}{calcTotaleps}
+
+   AvgStepsXInt <- sample                    %>%
+                   group_by(interval)        %>%
+                   filter(!is.na(steps))     %>%
+                   summarise(steps = mean(steps, na.rm=TRUE))
+   
+   MaxSteps    <- AvgStepsXInt$interval[which(AvgStepsXInt$steps == max(AvgStepsXInt$steps))]
+   
+   head(AvgStepsXInt)
+   summary(AvgStepsXInt$steps)
+     
+```
+
+The graph below plots the average steps taken per time interval across days.  
+
+```{r}{plotAvgSteps}
+
+   plot( AvgStepsXInt$interval, 
+         AvgStepsXInt$steps, 
+         type="l", 
+         main="Average Daily Steps", 
+         xlab="Interval", 
+         ylab="Steps", 
+         col="blue", 
+         lwd=1)
+
+  abline(v=MaxSteps, col="red", lwd=0.5)
+  
+```
+
+- The 5-minute interval,that contains the maximum number of steps is **`r MaxSteps`**
 
 ##  IV. Imputing missing values
 
