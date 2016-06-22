@@ -51,7 +51,6 @@ This next step processes the data for the analysis below by converting **date** 
 To answer this question, we need to aggregate (*sum*) the total number of steps taken each day. We will also calculate the **mean** and **median** number of the total number of steps taken per day
 
 
-
 ```{r}{calcTotalSteps}
 
    library(dplyr)
@@ -131,6 +130,87 @@ The graph below plots the average steps taken per time interval across days.
 - The 5-minute interval,that contains the maximum number of steps is **`r MaxSteps`**
 
 ##  IV. Imputing missing values
+
+```{r}{calMV}
+   missingVal <- nrow(sample[is.na(sample$steps),])
+```
+
+We noticed there are a number of days/intervals (**`r missingVal`**) that are missing values for steps (coded as **NA**). The presence of missing data may introduce bias into some calculations or summaries of the data.  Impute missing values using mean for each day.
+
+```{r}{ImputeMissingValues}
+
+   imputedSample <- sample
+   missingValues <- is.na(imputedSample$steps)
+   avg_interval  <- tapply( imputedSample$steps, 
+                            imputedSample$interval, 
+                            mean, 
+                            na.rm=TRUE, 
+                            simplify = TRUE )
+   
+   imputedSample$steps[missingValues] <- avg_interval[as.character(imputedSample$interval[missingValues])]
+   
+   missingVal <- nrow(imputedSample[is.na(imputedSample$steps),])
+   
+   head(imputedSample)
+   str(imputedSample)
+
+```
+
+In our new dataset there are now (**`r missingVal`**) days/intervals missing values for steps (coded as **NA**). 
+
+Below are the total steps per day presented in a histogram to see the distribution of steps over days, and visualize 
+the mean.
+
+```{r}{calcTotalImpSteps}
+
+   TotStepsXIDay  <- imputedSample         %>%
+                     group_by(date)        %>%
+                     summarise(steps = sum(steps, na.rm=TRUE))
+   
+   meanImpSteps    <- as.character(round(mean(TotStepsXIDay$steps,na.rm=T ),1))
+   medianImpSteps  <- as.character(round(median(TotStepsXIDay$steps,na.rm=T ),1))
+   
+   head(TotStepsXDay)
+   summary(TotStepsXDay$steps)
+   
+     
+```
+
+```{r}{plotImpSteps}
+
+   plot( TotStepsXDay$date, 
+         TotStepsXDay$steps, 
+         type="h", 
+         main="Histogram of Steps per Day", 
+         xlab="Date", 
+         ylab="Steps", 
+         #col="blue", 
+         lwd=8)
+
+  abline(h=mean(TotStepsXDay$steps, na.rm=TRUE), col="red", lwd=1)
+
+```
+
+- The **mean** number of steps taken per day is **`r meanImpSteps`** 
+- The **median** number of steps taken per day is **`r medianImpSteps`**
+
+What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+```{r}{calcImpact}
+
+ diffMean    <- as.character(round(mean(TotStepsXIDay$steps,na.rm=T ),1) 
+                           - round(mean(TotStepsXDay$steps,na.rm=T ),1))
+
+ diffMedian  <- as.character(round(median(TotStepsXIDay$steps,na.rm=T ),1) 
+                           - round(median(TotStepsXDay$steps,na.rm=T ),1))
+
+```
+
+- The difference in **mean** number of steps between the modified and raw sample is **`r diffMean`**
+- The difference in **median** number of steps between the modified and raw sample is **`r diffMedian`**
+
+The impact of imputing missing data with the average number of steps in the same 5-min interval is that 
+both the mean and the median are same value : **`r meanImpSteps`** 
 
 
 
