@@ -1,31 +1,37 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
+title: 'Reproducible Research: Peer Assessment 1'
+output:
   html_document:
-    keep_md: true
+    keep_md: yes
+  pdf_document: default
+  word_document: default
 ---
+
+Loading *dplyr* & *ggplot* libraries
+
+```{r} 
+   library(dplyr)
+   library(ggplot2)
+```
+
 
 ##   I. Loading and preprocessing the data
 
 1. Retrive the activity monitoring data sample from [Activity monitoring data](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip)
 ,then load it into a dataframe called **dataRaw** using **read.csv**. 
 
-
 ```{r}{loadSample}
 
-      dataUrl <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
-      dataZip <- "./activity.zip"
-      dataCsv <- "./activity.csv"
+     if (!file.exists("./activity.csv")){
 
-     if (!file.exists(dataCsv)){
-
-           if(!file.exists(dataZip)){
-               download.file(dataUrl, dataZip)
+           if(!file.exists("./activity.zip")){
+               download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", 
+                             "./activity.zip")
            }
-           unzip(dataZip)
+           unzip("./activity.zip")
       }
 
-      dataRaw <- read.csv(dataCsv)
+      dataRaw <- read.csv("./activity.csv")
       inpRows <- nrow(dataRaw)
       naRows  <- nrow(dataRaw[is.na(dataRaw$steps),])
       str(dataRaw)
@@ -52,12 +58,6 @@ modified dataframe in **sample1**.
 
 ##  II. What is mean total number of steps taken per day?
 
-Loading the dplyr library for processing the data frames
-
-```{r} 
-   library(dplyr)
-```
-
 1. To answer this question, we need to aggregate the *sum* (total) number of steps taken each **date** from the **sample1** dataframe. We also capture the **mean** and **median** number of steps taken per day. Our aggregated result set will be stored in **totStepsXDay**
 
 ```{r}{calc_totStepsXDay}
@@ -69,31 +69,24 @@ Loading the dplyr library for processing the data frames
    
    meanSteps1    <- as.character(round(mean(totStepsXDay$steps,na.rm=T ),1))
    medianSteps1  <- as.character(round(median(totStepsXDay$steps,na.rm=T ),1))
-   
-   head(totStepsXDay)
-   summary(totStepsXDay$steps)
-   
+
 ```
 
-2. To view distribution and visualize the mean total number of steps taken per day, we are presenting **totStepsXDay** in a histogram
+2. The histogram of **totStepsXDay** below shows the distribution total number of steps taken per day.
 
 ```{r}{plotTotSteps}
 
-   plot( totStepsXDay$date, 
-         totStepsXDay$steps, 
-         type="h", 
-         main="Histogram of Steps per Day", 
-         xlab="Date", 
-         ylab="Steps", 
-         #col="blue", 
-         lwd=8)
-
-  abline(h=mean(totStepsXDay$steps, na.rm=TRUE), col="red", lwd=1)
+hist(x=totStepsXDay$steps,
+     col="blue",
+     breaks=30,
+     xlab="Daily total steps",
+     ylab="Frequency",
+     main="Distribution of daily total steps (NA's ignored)")
 
 ```
 
-- The **mean** number of steps taken per day is **`r meanSteps1`** 
 - The **median** number of steps taken per day is **`r medianSteps1`**
+- *The* **mean** * total number of steps taken per day is* **`r meanSteps1`** 
 
 ## III. What is the average daily activity pattern?
 
@@ -107,8 +100,6 @@ Loading the dplyr library for processing the data frames
                    summarise(steps = mean(steps, na.rm=TRUE))
    
    maxStepInt   <- avgStepsXInt$interval[which(avgStepsXInt$steps == max(avgStepsXInt$steps))]
-   head(avgStepsXInt)
-   summary(avgStepsXInt$steps)
      
 ```
 
@@ -149,11 +140,9 @@ Loading the dplyr library for processing the data frames
    sample2$steps[mvalues] <- avg_interval[as.character(sample2$interval[mvalues])]
    
    mvalues <- nrow(sample2[is.na(sample2$steps),])
-   
-   head(sample2)
-   str(sample2)
 
 ```
+
 2. Using the same method (as in step **II. What is mean total number of steps taken per day** above) we will now aggregate the *sum* (total) number of steps taken each **date** from the **sample2** dataframe containing our imputed missing steps. We also capture the **mean** and **median** number of steps taken per day. Our aggregated result set will be stored in **totStepsXDay2**
 
 ```{r}{calc_totStepsXDay2}
@@ -166,24 +155,17 @@ Loading the dplyr library for processing the data frames
    meanSteps2    <- as.character(round(mean(totStepsXDay2$steps,na.rm=T ),1))
    medianSteps2  <- as.character(round(median(totStepsXDay2$steps,na.rm=T ),1))
    
-   head(totStepsXDay2)
-   summary(totStepsXDay2$steps)
-   
 ```
 3. To view distribution and visualize the mean total number of steps taken per day, we are presenting **totStepsXDay2** in a histogram
 
 ```{r}{plotTotSteps2}
 
-   plot( totStepsXDay2$date, 
-         totStepsXDay2$steps, 
-         type="h", 
-         main="Histogram of Steps per Day", 
-         xlab="Date", 
-         ylab="Steps", 
-         col="blue", 
-         lwd=8)
-
-  abline(h=mean(totStepsXDay$steps, na.rm=TRUE), col="red", lwd=1)
+hist(x=totStepsXDay2$steps,
+     col="blue",
+     breaks=30,
+     xlab="Daily total steps",
+     ylab="Frequency",
+    main="Distribution of daily total steps")
 
 ```
 
@@ -207,9 +189,6 @@ Loading the dplyr library for processing the data frames
                                     weekdays(sample2$date)=="Friday",
                                     "Weekday", 
                                     "Weekend"))
-
-   head(sample2)
-   str(sample2)
    
 ```
 
@@ -224,7 +203,6 @@ Loading the dplyr library for processing the data frames
                         summarise(steps = mean(steps, na.rm=TRUE))
  
 
-   head(avgStepsXIntXType)
    str(avgStepsXIntXType)
    
 ```
@@ -233,7 +211,7 @@ Loading the dplyr library for processing the data frames
 
 ```{r}{plotavgStepsXIntXType}
     
-    library(ggplot2)
+
 
     p <- ggplot( avgStepsXIntXType, 
                  aes( x     = interval, 
@@ -250,5 +228,3 @@ Loading the dplyr library for processing the data frames
 ```
 
 *The panel plot above illustrates there * **are** *differences in activity patterns between weekdays and weekends*
-
-  
